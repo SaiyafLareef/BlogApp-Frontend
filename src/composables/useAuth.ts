@@ -16,6 +16,7 @@ export function useAuth() {
     login: store.login,
     register: store.register,
     logout: store.logout,
-    updateProfile: store.updateProfile
+    updateProfile: store.updateProfile,
+    uploadAvatar: store.uploadAvatar,
   }
 }

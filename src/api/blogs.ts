@@ -1,66 +1,77 @@
-import { MOCK_POSTS } from '@/utils/mockData'
-import type { Post } from '@/types'
+import { apiClient, apiUpload } from './index';
+import type { Post, PaginatedResponse } from '@/types';
 
-const DELAY = 500
-let posts = [...MOCK_POSTS]
-
-export const blogsApi = {
-  getPosts: async (): Promise<Post[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([...posts]), DELAY)
-    })
-  },
-  
-  getPostsByUser: async (userId: string): Promise<Post[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(posts.filter(p => p.author.id === userId)), DELAY)
-    })
-  },
-
-  getPostById: async (id: string): Promise<Post | undefined> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(posts.find(p => p.id === id)), DELAY)
-    })
-  },
-
-  createPost: async (postData: Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'likes' | 'bookmarks'>): Promise<Post> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newPost: Post = {
-          ...postData,
-          id: `post-${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          views: 0,
-          likes: 0,
-          bookmarks: 0
-        } as Post
-        posts.unshift(newPost)
-        resolve(newPost)
-      }, DELAY)
-    })
-  },
-
-  updatePost: async (id: string, updates: Partial<Post>): Promise<Post> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = posts.findIndex(p => p.id === id)
-        if (index !== -1) {
-          posts[index] = { ...posts[index], ...updates, updatedAt: new Date().toISOString() }
-          resolve(posts[index])
-        } else {
-          reject(new Error('Post not found'))
-        }
-      }, DELAY)
-    })
-  },
-
-  deletePost: async (id: string): Promise<void> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        posts = posts.filter(p => p.id !== id)
-        resolve()
-      }, DELAY)
-    })
-  }
+export interface GetBlogsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  /** Category name or slug */
+  category?: string;
+  /** Tag name or slug */
+  tag?: string;
+  /** Author username */
+  author?: string;
+  /** Author ID */
+  authorId?: string;
+  status?: 'PUBLISHED' | 'DRAFT';
+  sort?: 'latest' | 'oldest' | 'popular';
 }
+
+export interface CreatePostData {
+  title: string;
+  slug: string;
+  content: string;
+  summary?: string;
+  coverImage?: string;
+  status?: 'PUBLISHED' | 'DRAFT';
+  /** Comma-separated tag names or array of tag names */
+  tags?: string[];
+  /** Category name */
+  category?: string;
+}
+
+export const blogApi = {
+  /**
+   * GET /blogs
+   * Returns { message, posts, meta }
+   */
+  getPosts: (params?: GetBlogsParams): Promise<PaginatedResponse<Post>> =>
+    apiClient.get('/blogs', { params }),
+
+  /**
+   * GET /blogs/:id
+   * Returns { message, post }
+   */
+  getPost: (slugOrId: string): Promise<{ post: Post }> =>
+    apiClient.get(`/blogs/${slugOrId}`),
+
+  /**
+   * POST /blogs  (requires auth)
+   * Returns { message, post }
+   */
+  createPost: (postData: CreatePostData): Promise<{ post: Post }> =>
+    apiClient.post('/blogs', postData),
+
+  /**
+   * PATCH /blogs/:id  (requires auth, must be author)
+   * Returns { message, post }
+   */
+  updatePost: (id: string, updates: Partial<CreatePostData>): Promise<{ post: Post }> =>
+    apiClient.patch(`/blogs/${id}`, updates),
+
+  /**
+   * DELETE /blogs/:id  (requires auth, must be author)
+   */
+  deletePost: (id: string): Promise<void> =>
+    apiClient.delete(`/blogs/${id}`),
+
+  /**
+   * POST /blogs/:id/cover  (multipart/form-data, field: "image")
+   * Returns { message, post }
+   */
+  uploadCoverImage: (id: string, file: File): Promise<{ post: Post }> => {
+    const formData = new FormData();
+    formData.append('image', file); // backend expects field named "image"
+    return apiUpload(`/blogs/${id}/cover`, formData);
+  },
+};

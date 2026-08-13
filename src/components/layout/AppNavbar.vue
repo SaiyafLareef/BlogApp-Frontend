@@ -12,13 +12,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { BookOpen, Search, LogOut, Settings, User as UserIcon, PenSquare, FileText } from '@lucide/vue'
+import { BookOpen, Search, LogOut, Settings, User as UserIcon, PenSquare, FileText, Bookmark } from '@lucide/vue'
 import MobileMenu from './MobileMenu.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const { user, isAuthenticated, logout } = useAuth()
+
+const searchQuery = ref('')
+
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push({ name: 'explore', query: { search: searchQuery.value } })
+  }
+}
 
 const handleLogout = async () => {
   await logout()
@@ -53,10 +61,16 @@ const handleLogout = async () => {
         <!-- Search -->
         <div class="relative hidden sm:block w-48 lg:w-64">
           <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search articles..." class="pl-8 bg-muted/50 rounded-full border-transparent focus-visible:ring-1 focus-visible:border-border h-9" />
+          <Input 
+            type="search" 
+            placeholder="Search articles..." 
+            class="pl-8 bg-muted/50 rounded-full border-transparent focus-visible:ring-1 focus-visible:border-border h-9" 
+            v-model="searchQuery"
+            @keyup.enter="handleSearch"
+          />
         </div>
         
-        <Button variant="ghost" size="icon" class="sm:hidden">
+        <Button variant="ghost" size="icon" class="sm:hidden" @click="handleSearch">
           <Search class="h-5 w-5" />
         </Button>
 
@@ -73,15 +87,15 @@ const handleLogout = async () => {
             <DropdownMenuTrigger as-child>
               <Button variant="ghost" class="relative h-9 w-9 rounded-full">
                 <Avatar class="h-9 w-9 border">
-                  <AvatarImage :src="user?.avatarUrl || user?.avatar" :alt="user?.name" />
+                  <AvatarImage :src="(user?.avatar as string) || ''" :alt="user?.name || ''" />
                   <AvatarFallback>{{ user?.name?.charAt(0).toUpperCase() }}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-56" align="end">
               <DropdownMenuLabel class="font-normal flex flex-col">
-                <span class="text-sm font-medium leading-none">{{ user.name }}</span>
-                <span class="text-xs leading-none text-muted-foreground mt-1">{{ user.email }}</span>
+                <span class="text-sm font-medium leading-none">{{ user?.name }}</span>
+                <span class="text-xs leading-none text-muted-foreground mt-1">{{ user?.email }}</span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem class="cursor-pointer" as-child>
@@ -94,6 +108,12 @@ const handleLogout = async () => {
                 <RouterLink to="/my-blogs" class="w-full flex items-center">
                   <FileText class="mr-2 h-4 w-4" />
                   <span>My Blogs</span>
+                </RouterLink>
+              </DropdownMenuItem>
+              <DropdownMenuItem class="cursor-pointer" as-child>
+                <RouterLink to="/my-bookmarks" class="w-full flex items-center">
+                  <Bookmark class="mr-2 h-4 w-4" />
+                  <span>My Bookmarks</span>
                 </RouterLink>
               </DropdownMenuItem>
               <DropdownMenuItem class="cursor-pointer" as-child>

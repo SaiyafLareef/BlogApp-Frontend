@@ -4,6 +4,7 @@ import { useForm, useField } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { profileUpdateSchema, passwordUpdateSchema } from '@/validation/profile'
 import { useAuth } from '@/composables/useAuth'
+import { useAuthStore } from '@/stores/auth'
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Loader2, Upload, AlertTriangle } from '@lucide/vue'
 
 const { user, updateProfile } = useAuth()
+const authStore = useAuthStore()
 
 // --- PROFILE FORM ---
 const profileSchema = toTypedSchema(profileUpdateSchema)
@@ -23,17 +25,19 @@ const { handleSubmit: handleProfileSubmit, isSubmitting: isProfileSubmitting } =
     name: user.value?.name || '',
     email: user.value?.email || '',
     bio: user.value?.bio || '',
-    avatarUrl: user.value?.avatarUrl || ''
+    avatar: user.value?.avatar || ''
   }
 })
 
 const { value: name, errorMessage: nameError } = useField<string>('name')
 const { value: email, errorMessage: emailError } = useField<string>('email')
 const { value: bio, errorMessage: bioError } = useField<string>('bio')
-const { value: avatarUrl, errorMessage: avatarError } = useField<string>('avatarUrl')
+const { value: avatar, errorMessage: avatarError } = useField<string>('avatar')
 
 const isUploadingAvatar = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+const avatarFile = ref<File | null>(null)
+const avatarUrl = ref<string | null>(null)
 
 const triggerAvatarUpload = () => {
   fileInput.value?.click()
@@ -42,21 +46,33 @@ const triggerAvatarUpload = () => {
 const handleAvatarSelect = async (event: Event) => {
   const target = event.target as HTMLInputElement
   if (!target.files || target.files.length === 0) return
-  
+  const file: File = target.files.item(0)!
+  avatarFile.value = file
+  // Show local preview immediately
+  avatarUrl.value = URL.createObjectURL(file)
+  avatar.value = avatarUrl.value
+
   isUploadingAvatar.value = true
-  // Mock upload delay
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  avatarUrl.value = URL.createObjectURL(target.files[0])
-  isUploadingAvatar.value = false
+  try {
+    await authStore.uploadAvatar(file)
+  } catch (err: any) {
+    console.error('Avatar upload failed', err)
+  } finally {
+    isUploadingAvatar.value = false
+  }
 }
 
+const profileSuccess = ref(false)
 const onProfileSubmit = handleProfileSubmit(async (values) => {
-  // Mock API call
-  await new Promise(resolve => setTimeout(resolve, 800))
-  if (user.value) {
-    await updateProfile(values)
+  profileSuccess.value = false
+  if (!user.value) return
+  try {
+    await updateProfile({ name: values.name, bio: values.bio })
+    profileSuccess.value = true
+    setTimeout(() => { profileSuccess.value = false }, 3000)
+  } catch (err: any) {
+    console.error('Profile update failed', err)
   }
-  alert('Profile updated successfully!')
 })
 
 // --- PASSWORD FORM ---
@@ -71,10 +87,13 @@ const { value: newPassword, errorMessage: newPasswordError } = useField<string>(
 const { value: confirmPassword, errorMessage: confirmPasswordError } = useField<string>('confirmPassword')
 
 const onPasswordSubmit = handlePasswordSubmit(async (values) => {
-  // Mock API call
-  await new Promise(resolve => setTimeout(resolve, 800))
-  alert('Password updated successfully!')
-  resetPasswordForm()
+  try {
+    await authStore.updatePassword(values.currentPassword, values.newPassword)
+    alert('Password updated successfully!')
+    resetPasswordForm()
+  } catch (err: any) {
+    alert(err?.response?.data?.error?.message || 'Failed to update password')
+  }
 })
 
 // --- DELETE ACCOUNT ---
@@ -82,9 +101,14 @@ const isDeleting = ref(false)
 const deleteAccount = async () => {
   if (confirm('Are you absolutely sure? This action cannot be undone.')) {
     isDeleting.value = true
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    alert('Account deleted. You will be redirected to the home page.')
-    window.location.href = '/' // Mock redirect
+    try {
+      await authStore.deleteAccount()
+      alert('Account deleted. You will be redirected to the home page.')
+      window.location.href = '/' 
+    } catch (err: any) {
+      alert(err?.response?.data?.error?.message || 'Failed to delete account')
+      isDeleting.value = false
+    }
   }
 }
 </script>
@@ -110,7 +134,7 @@ const deleteAccount = async () => {
             <!-- Avatar Section -->
             <div class="flex items-center gap-6">
               <Avatar class="h-24 w-24 border bg-background">
-                <AvatarImage :src="avatarUrl || user?.avatarUrl || ''" />
+                <AvatarImage :src="avatar || user?.avatar || ''" />
                 <AvatarFallback class="text-3xl">{{ name ? name.charAt(0).toUpperCase() : user?.name?.charAt(0).toUpperCase() }}</AvatarFallback>
               </Avatar>
               <div class="space-y-2">
@@ -150,11 +174,14 @@ const deleteAccount = async () => {
             </div>
             
           </CardContent>
-          <CardFooter class="border-t border-border/50 px-6 py-4">
+          <CardFooter class="border-t border-border/50 px-6 py-4 flex items-center gap-4">
             <Button type="submit" :disabled="isProfileSubmitting">
               <Loader2 v-if="isProfileSubmitting" class="mr-2 h-4 w-4 animate-spin" />
               Save Changes
             </Button>
+            <span v-if="profileSuccess" class="text-sm text-green-600 dark:text-green-400 font-medium">
+              ✓ Profile updated successfully
+            </span>
           </CardFooter>
         </form>
       </Card>

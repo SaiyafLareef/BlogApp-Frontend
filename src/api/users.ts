@@ -1,42 +1,49 @@
-import type { User } from '@/types'
+import { apiClient, apiUpload } from './index';
+import type { User } from '@/types';
 
-const DELAY = 600
+export const userApi = {
+  /**
+   * GET /users/:username
+   * Returns { user }
+   */
+  getProfile: (username: string): Promise<{ user: User }> =>
+    apiClient.get(`/users/${username}`),
 
-export const usersApi = {
-  updateProfile: async (updates: Partial<User>): Promise<User> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(updates as User), DELAY)
-    })
+  /**
+   * PATCH /users/me
+   * Returns { user }
+   */
+  updateProfile: (updates: { name?: string; bio?: string; email?: string }): Promise<{ user: User }> =>
+    apiClient.patch('/users/me', updates),
+
+  /**
+   * POST /users/me/avatar  (multipart/form-data)
+   * Returns { user }
+   */
+  uploadAvatar: (file: File): Promise<{ user: User }> => {
+    const formData = new FormData();
+    formData.append('image', file); // changed from 'avatar' to 'image' to match backend expectation
+    return apiUpload('/users/me/avatar', formData);
   },
 
-  changeAvatar: async (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(URL.createObjectURL(file)), DELAY + 400)
-    })
-  },
+  /**
+   * DELETE /users/me
+   * Returns { message }
+   */
+  deleteAccount: (): Promise<{ message: string }> =>
+    apiClient.delete('/users/me'),
 
-  updatePassword: async (currentPass: string, newPass: string): Promise<void> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(), DELAY)
-    })
-  },
+  /**
+   * GET /users/me/likes
+   * Returns { posts }
+   */
+  getLikedPosts: (): Promise<{ posts: any[] }> =>
+    apiClient.get('/users/me/likes'),
 
-  deleteAccount: async (userId: string): Promise<void> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(), DELAY)
-    })
-  },
-
-  toggleLike: async (postId: string): Promise<boolean> => {
-    // Returns true if liked, false if unliked
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(true), 300)
-    })
-  },
-
-  toggleBookmark: async (postId: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(true), 300)
-    })
-  }
-}
+  /**
+   * GET /users/me/bookmarks
+   * Returns { bookmarks } or { posts } depending on API. The backend returns paginated bookmarks.
+   */
+  getBookmarkedPosts: (): Promise<any> =>
+    apiClient.get('/users/me/bookmarks'),
+};

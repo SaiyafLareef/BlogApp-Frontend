@@ -11,7 +11,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
+  'update:modelValue': [value: string]
+  'update:file': [file: File | null]
 }>()
 
 const isUploading = ref(false)
@@ -23,24 +24,22 @@ const triggerFileSelect = () => {
 }
 
 const handleFileSelect = async (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (!target.files || target.files.length === 0) return
+  const input = event.target as HTMLInputElement
+  if (!input.files || input.files.length === 0) return
 
-  const file = target.files[0]
+  const file = input.files.item(0)!
   if (!file.type.startsWith('image/')) {
     alert('Please select an image file')
     return
   }
 
   isUploading.value = true
-  
-  // Mock an API upload delay
-  await new Promise(resolve => setTimeout(resolve, 1500))
-  
-  // Create object URL for local preview mock
+
+  // Show local preview immediately (URL is released when component unmounts)
   const objectUrl = URL.createObjectURL(file)
   emit('update:modelValue', objectUrl)
-  
+  emit('update:file', file)
+
   isUploading.value = false
   if (fileInput.value) fileInput.value.value = ''
 }
@@ -48,20 +47,21 @@ const handleFileSelect = async (event: Event) => {
 const removeImage = () => {
   if (props.disabled) return
   emit('update:modelValue', '')
+  emit('update:file', null)
 }
 </script>
 
 <template>
   <div class="space-y-2">
     <Label>Cover Image</Label>
-    
-    <div 
-      v-if="modelValue" 
+
+    <div
+      v-if="modelValue"
       class="relative group rounded-xl overflow-hidden border border-border aspect-[21/9] bg-muted/30"
     >
       <img :src="modelValue" alt="Cover preview" class="w-full h-full object-cover" />
-      
-      <div 
+
+      <div
         class="absolute inset-0 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4"
         :class="{ 'hidden': disabled }"
       >
@@ -74,9 +74,9 @@ const removeImage = () => {
         </Button>
       </div>
     </div>
-    
-    <div 
-      v-else 
+
+    <div
+      v-else
       @click="triggerFileSelect"
       class="border-2 border-dashed border-border rounded-xl p-12 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/30 hover:border-primary/50 transition-colors cursor-pointer aspect-[21/9]"
       :class="{ 'opacity-50 cursor-not-allowed': disabled || isUploading }"
@@ -93,15 +93,15 @@ const removeImage = () => {
         <p class="text-sm">SVG, PNG, JPG or GIF (max. 5MB)</p>
       </template>
     </div>
-    
-    <input 
-      type="file" 
-      ref="fileInput" 
-      accept="image/*" 
-      class="hidden" 
+
+    <input
+      type="file"
+      ref="fileInput"
+      accept="image/*"
+      class="hidden"
       @change="handleFileSelect"
     />
-    
+
     <p v-if="error" class="text-xs text-destructive">{{ error }}</p>
   </div>
 </template>

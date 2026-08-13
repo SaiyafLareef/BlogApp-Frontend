@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import type { Comment } from '@/types'
 import { useAuth } from '@/composables/useAuth'
 import { useComments } from '@/composables/useComments'
+import { storeToRefs } from 'pinia'
+import { useInteractionStore } from '@/stores/interaction'
 import CommentForm from './CommentForm.vue'
 import CommentCard from './CommentCard.vue'
 
@@ -15,7 +17,9 @@ interface CommentNode extends Comment {
 }
 
 const { user } = useAuth()
-const { comments, addComment, updateComment, deleteComment, likeComment } = useComments(props.postId)
+const { comments, addComment, updateComment, deleteComment } = useComments(props.postId)
+const interactionStore = useInteractionStore()
+const { loading } = storeToRefs(interactionStore)
 const isSubmittingNew = ref(false)
 
 // Build Tree
@@ -54,12 +58,7 @@ const handleAddComment = async (content: string) => {
   if (!user.value) return
   isSubmittingNew.value = true
   try {
-    await addComment({
-      postId: props.postId,
-      author: user.value,
-      content,
-      parentId: null
-    })
+    await addComment(props.postId, content, null)
   } catch (error) {
     console.error('Failed to add comment')
   } finally {
@@ -70,12 +69,7 @@ const handleAddComment = async (content: string) => {
 const handleReply = async (parentId: string, content: string) => {
   if (!user.value) return
   try {
-    await addComment({
-      postId: props.postId,
-      author: user.value,
-      content,
-      parentId
-    })
+    await addComment(props.postId, content, parentId)
   } catch (error) {
     console.error('Failed to reply')
   }
@@ -99,11 +93,7 @@ const handleDelete = async (id: string) => {
 }
 
 const handleLike = async (id: string) => {
-  try {
-    await likeComment(id)
-  } catch (error) {
-    console.error('Failed to like')
-  }
+  // Not implemented in backend yet
 }
 </script>
 
@@ -117,8 +107,8 @@ const handleLike = async (id: string) => {
       <h3 class="font-medium text-foreground mb-4">Leave a comment</h3>
       <div class="flex gap-4">
         <div class="hidden sm:flex h-10 w-10 rounded-full overflow-hidden bg-primary/10 items-center justify-center text-primary font-bold flex-shrink-0">
-          <img v-if="currentUser.avatarUrl" :src="currentUser.avatarUrl" :alt="currentUser.name" class="h-full w-full object-cover" />
-          <span v-else>{{ currentUser.name.charAt(0).toUpperCase() }}</span>
+          <img v-if="user?.avatar" :src="user.avatar as string" :alt="user?.name || ''" class="h-full w-full object-cover" />
+          <span v-else>{{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}</span>
         </div>
         <div class="flex-1">
           <CommentForm 

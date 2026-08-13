@@ -19,7 +19,6 @@ export function useComments(postId?: string) {
     // Actions
     addComment: store.addComment,
     deleteComment: store.deleteComment,
-    updateComment: store.updateComment,
-    likeComment: store.likeComment
+    updateComment: store.updateComment
   }
 }

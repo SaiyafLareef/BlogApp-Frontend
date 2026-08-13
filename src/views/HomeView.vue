@@ -1,24 +1,25 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ArrowRight, Sparkles } from '@lucide/vue'
 import BlogCard from '@/components/blog/BlogCard.vue'
 import { useBlog } from '@/composables/useBlog'
+import { blogApi } from '@/api/blogs'
 
 const router = useRouter()
-const { posts, fetchAllPosts, loading } = useBlog()
+const { fetchAllPosts, loading } = useBlog()
+
+const featuredPosts = ref<any[]>([])
 
 onMounted(async () => {
-  if (posts.value.length === 0) {
-    await fetchAllPosts()
+  try {
+    const res = await blogApi.getPosts({ sort: 'popular', limit: 3 })
+    featuredPosts.value = res.posts
+  } catch (err) {
+    console.error('Failed to load featured posts', err)
   }
-})
-
-const featuredPosts = computed(() => {
-  // Return top 3 posts (mocked as most recent)
-  return [...posts.value].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3)
 })
 </script>
 

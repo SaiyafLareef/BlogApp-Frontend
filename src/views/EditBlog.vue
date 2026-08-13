@@ -33,8 +33,14 @@ const handleSubmit = async (values: any, status: 'draft' | 'published') => {
   isSubmitting.value = true
   try {
     await updatePost(postData.value.id, {
-      ...values,
-      status
+      title: values.title,
+      slug: values.slug,
+      content: values.content,
+      summary: values.summary,
+      coverImage: values.coverImage,
+      category: values.category,
+      tags: Array.isArray(values.tags) ? values.tags : [],
+      status: status === 'published' ? 'PUBLISHED' : 'DRAFT',
     })
     router.push('/my-blogs')
   } catch (error) {

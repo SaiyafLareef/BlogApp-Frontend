@@ -58,7 +58,7 @@ const handleLogout = async () => {
         <template v-if="isAuthenticated">
           <div class="flex items-center gap-3 mb-4 px-2">
             <Avatar class="h-10 w-10 border">
-              <AvatarImage :src="user.avatar" :alt="user.name" />
+              <AvatarImage :src="(user?.avatar as string) || ''" :alt="user?.name || ''" />
               <AvatarFallback>{{ user?.name?.charAt(0) }}</AvatarFallback>
             </Avatar>
             <div class="flex flex-col">

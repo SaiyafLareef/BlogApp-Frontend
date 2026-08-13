@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { blogsApi } from '@/api/blogs'
+import { blogApi } from '@/api/blogs'
 import { useAuth } from '@/composables/useAuth'
 import { useBlog } from '@/composables/useBlog'
 import { formatDate } from '@/utils/date'
 import type { Post } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Edit2, Trash2, Plus, Eye } from '@lucide/vue'
+import { Edit2, Trash2, Plus, Eye, Heart, MessageCircle } from '@lucide/vue'
 
 const router = useRouter()
 const { user } = useAuth()
@@ -20,7 +20,8 @@ const fetchPosts = async () => {
   isLoading.value = true
   if (!user.value) return
   try {
-    posts.value = await blogsApi.getPostsByUser(user.value.id)
+    const res = await blogApi.getPosts({ authorId: user.value.id })
+    posts.value = res.posts
   } catch (error) {
     console.error('Failed to load user posts')
   } finally {
@@ -66,38 +67,39 @@ const deletePost = async (id: string) => {
     </div>
 
     <div v-else class="grid grid-cols-1 gap-4">
-      <div 
-        v-for="post in posts" 
+      <div
+        v-for="post in posts"
         :key="post.id"
         class="flex flex-col sm:flex-row gap-6 p-4 rounded-xl border border-border/50 bg-card hover:border-primary/50 transition-colors group"
       >
         <div class="sm:w-48 h-32 rounded-lg overflow-hidden flex-shrink-0">
-          <img :src="post.imageUrl" :alt="post.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img :src="(post.coverImage as string) || ''" :alt="post.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         </div>
-        
+
         <div class="flex-1 flex flex-col justify-between">
           <div>
             <div class="flex items-center gap-3 mb-2">
-              <Badge :variant="post.status === 'published' ? 'default' : 'secondary'">
-                {{ post.status === 'published' ? 'Published' : 'Draft' }}
+              <Badge :variant="post.status === 'PUBLISHED' ? 'default' : 'secondary'">
+                {{ post.status === 'PUBLISHED' ? 'Published' : 'Draft' }}
               </Badge>
               <span class="text-xs text-muted-foreground">{{ formatDate(post.updatedAt) }}</span>
             </div>
             <h3 class="text-lg font-semibold line-clamp-1 mb-1">{{ post.title }}</h3>
-            <p class="text-sm text-muted-foreground line-clamp-2">{{ post.excerpt }}</p>
+            <p class="text-sm text-muted-foreground line-clamp-2">{{ post.summary }}</p>
           </div>
-          
+
           <div class="flex items-center gap-4 mt-4 pt-4 border-t border-border/40">
             <div class="flex items-center gap-4 text-xs text-muted-foreground">
+              <span class="flex items-center"><Heart class="w-4 h-4 mr-1" /> {{ post._count?.likes || post.likes || 0 }}</span>
+              <span class="flex items-center"><MessageCircle class="w-4 h-4 mr-1" /> {{ post._count?.comments || 0 }}</span>
               <span>{{ post.views }} views</span>
-              <span>{{ post.likes || 0 }} likes</span>
             </div>
-            
+
             <div class="flex items-center gap-2 ml-auto">
-              <Button 
-                v-if="post.status === 'published'"
-                variant="ghost" 
-                size="sm" 
+              <Button
+                v-if="post.status === 'PUBLISHED'"
+                variant="ghost"
+                size="sm"
                 class="text-muted-foreground hover:text-primary"
                 @click="router.push(`/blog/${post.id}`)"
                 title="View Post"
@@ -105,9 +107,9 @@ const deletePost = async (id: string) => {
                 <Eye class="h-4 w-4" />
                 <span class="sr-only">View</span>
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 class="text-muted-foreground hover:text-primary"
                 @click="router.push(`/blog/edit/${post.id}`)"
                 title="Edit Post"
@@ -115,9 +117,9 @@ const deletePost = async (id: string) => {
                 <Edit2 class="h-4 w-4" />
                 <span class="sr-only">Edit</span>
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 class="text-muted-foreground hover:text-destructive"
                 @click="deletePost(post.id)"
                 title="Delete Post"

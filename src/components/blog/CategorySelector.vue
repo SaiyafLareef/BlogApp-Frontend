@@ -20,7 +20,7 @@ const categories = ['Vue.js', 'CSS', 'TypeScript', 'UI/UX', 'Design', 'Testing',
     <Label for="category">Category</Label>
     <Select 
       :model-value="modelValue" 
-      @update:model-value="emit('update:modelValue', $event)" 
+      @update:model-value="emit('update:modelValue', $event as string)"
       :disabled="disabled"
     >
       <SelectTrigger id="category">

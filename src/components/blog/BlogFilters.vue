@@ -23,15 +23,15 @@ const emit = defineEmits<{
       <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input 
         type="search" 
-        placeholder="Search posts by title or excerpt..." 
+        placeholder="Search posts by title or summary..." 
         class="pl-9 bg-background h-10" 
         :value="search"
-        @input="(e) => emit('update:search', (e.target as HTMLInputElement).value)"
+        @input="(e: any) => emit('update:search', (e.target as HTMLInputElement).value)"
       />
     </div>
     
     <div class="flex flex-wrap sm:flex-nowrap gap-4 w-full md:w-auto">
-      <Select :model-value="category" @update:model-value="(v) => emit('update:category', v)">
+      <Select :model-value="category" @update:model-value="(v) => emit('update:category', v as string)">
         <SelectTrigger class="w-full sm:w-[160px] bg-background h-10">
           <SelectValue placeholder="Category" />
         </SelectTrigger>
@@ -45,7 +45,7 @@ const emit = defineEmits<{
         </SelectContent>
       </Select>
       
-      <Select :model-value="sort" @update:model-value="(v) => emit('update:sort', v)">
+      <Select :model-value="sort" @update:model-value="(v) => emit('update:sort', v as string)">
         <SelectTrigger class="w-full sm:w-[160px] bg-background h-10">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>

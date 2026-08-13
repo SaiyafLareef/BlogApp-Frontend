@@ -13,9 +13,9 @@ defineProps<{
     <CardContent class="p-6">
       <h3 class="text-lg font-semibold mb-4">About the Author</h3>
       <div class="flex items-start gap-4">
-        <div class="h-16 w-16 rounded-full overflow-hidden bg-primary/10 flex-shrink-0 flex items-center justify-center text-primary text-xl font-bold">
-          <img v-if="author.avatarUrl" :src="author.avatarUrl" :alt="author.name" class="h-full w-full object-cover" />
-          <span v-else>{{ author.name.charAt(0).toUpperCase() }}</span>
+        <div class="h-16 w-16 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center text-primary font-bold text-xl flex-shrink-0">
+          <img v-if="author.avatar" :src="author.avatar as string" :alt="author.name || ''" class="h-full w-full object-cover" />
+          <span v-else>{{ author.name?.charAt(0)?.toUpperCase() || 'U' }}</span>
         </div>
         <div class="flex-1">
           <h4 class="font-bold text-foreground">{{ author.name }}</h4>

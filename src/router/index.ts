@@ -54,6 +54,12 @@ const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
+          path: 'my-bookmarks',
+          name: 'my-bookmarks',
+          component: () => import('../views/MyBookmarks.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
           path: 'profile',
           name: 'profile',
           component: () => import('../views/Profile.vue'),
@@ -88,16 +94,14 @@ const router = createRouter({
 })
 
 // Route Guards
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const authStore = useAuthStore()
   const isAuthenticated = authStore.isAuthenticated
 
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
+    return { name: 'login', query: { redirect: to.fullPath } }
   } else if (to.meta.guestOnly && isAuthenticated) {
-    next({ name: 'home' })
-  } else {
-    next()
+    return { name: 'home' }
   }
 })
 

@@ -22,7 +22,9 @@ const { value: password, errorMessage: passwordError } = useField<string>('passw
 const { value: confirmPassword, errorMessage: confirmPasswordError } = useField<string>('confirmPassword')
 
 const onSubmit = handleSubmit(async (values) => {
-  await register({ name: values.name, email: values.email })
+  // Generate a username from the name if not provided
+  const username = values.name.toLowerCase().replace(/\s+/g, '') + Math.floor(Math.random() * 1000)
+  await register({ username, name: values.name, email: values.email, password: values.password, confirmPassword: values.confirmPassword })
   if (!error.value) {
     router.push('/')
   }

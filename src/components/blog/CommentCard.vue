@@ -24,7 +24,6 @@ const emit = defineEmits<{
 }>()
 
 const currentDepth = computed(() => props.depth || 0)
-// Limit visual nesting depth to prevent layout crushing on mobile
 const maxDepthReached = computed(() => currentDepth.value >= 3)
 
 const isReplying = ref(false)
@@ -33,14 +32,14 @@ const isSubmitting = ref(false)
 
 const { user } = useAuth()
 
-const isAuthor = computed(() => user.value && props.comment.author.id === user.value.id)
+const isAuthor = computed(() => user.value && props.comment.user.id === user.value.id)
 
 const handleReply = async (content: string) => {
   isSubmitting.value = true
-  const parentIdToUse = maxDepthReached.value && props.comment.parentId 
-    ? props.comment.parentId 
+  const parentIdToUse = maxDepthReached.value && props.comment.parentId
+    ? props.comment.parentId
     : props.comment.id
-    
+
   emit('reply', parentIdToUse, content)
   isSubmitting.value = false
   isReplying.value = false
@@ -53,7 +52,6 @@ const handleEdit = async (content: string) => {
   isEditing.value = false
 }
 
-// Pass events up from children components
 const forwardReply = (parentId: string, content: string) => emit('reply', parentId, content)
 const forwardEdit = (id: string, content: string) => emit('edit', id, content)
 const forwardDelete = (id: string) => emit('delete', id)
@@ -64,26 +62,28 @@ const forwardLike = (id: string) => emit('like', id)
   <div :class="['flex gap-4 relative', currentDepth > 0 ? 'mt-4' : 'mt-8']">
     <!-- Connecting line for nested replies -->
     <div v-if="currentDepth > 0" class="absolute -left-[27px] top-10 bottom-[-16px] w-px bg-border/50 hidden sm:block"></div>
-    
+
+    <!-- Avatar -->
     <div class="flex-shrink-0">
       <div class="h-10 w-10 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center text-primary font-bold">
-        <img v-if="comment.author.avatarUrl" :src="comment.author.avatarUrl" :alt="comment.author.name" class="h-full w-full object-cover" />
-        <span v-else>{{ comment.author.name.charAt(0).toUpperCase() }}</span>
+        <img v-if="comment.user?.avatar" :src="comment.user.avatar as string" :alt="comment.user?.name || ''" class="h-full w-full object-cover" />
+        <span v-else>{{ comment.user?.name?.charAt(0)?.toUpperCase() || 'U' }}</span>
       </div>
     </div>
-    
-    <div class="flex-1 space-y-2">
-      <div class="flex items-center gap-2">
-        <span class="font-semibold text-foreground">{{ comment.author.name }}</span>
+
+    <!-- Content -->
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="font-medium text-sm">{{ comment.user?.name || 'Unknown' }}</span>
         <span class="text-xs text-muted-foreground">{{ formatTimeAgo(comment.createdAt) }}</span>
       </div>
-      
+
       <div v-if="!isEditing" class="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
         {{ comment.content }}
       </div>
-      
+
       <div v-else class="mt-2">
-        <CommentForm 
+        <CommentForm
           :initial-value="comment.content"
           submit-label="Save changes"
           :is-submitting="isSubmitting"
@@ -91,25 +91,26 @@ const forwardLike = (id: string) => emit('like', id)
           @cancel="isEditing = false"
         />
       </div>
-      
-      <div v-if="!isEditing" class="flex items-center gap-4 text-xs font-medium pt-1">
-        <button 
+
+      <!-- Action row -->
+      <div v-if="!isEditing" class="flex items-center gap-4 text-xs font-medium pt-2">
+        <button
           class="flex items-center gap-1.5 text-muted-foreground hover:text-red-500 transition-colors"
           @click="emit('like', comment.id)"
         >
-          <Heart class="h-3.5 w-3.5" :class="comment.likes > 0 ? 'fill-red-500 text-red-500' : ''" />
-          <span>{{ comment.likes > 0 ? comment.likes : 'Like' }}</span>
+          <Heart class="h-3.5 w-3.5" />
+          <span>Like</span>
         </button>
-        
-        <button 
+
+        <button
           class="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           @click="isReplying = !isReplying"
         >
           <Reply class="h-3.5 w-3.5" />
           <span>Reply</span>
         </button>
-        
-        <button 
+
+        <button
           v-if="isAuthor"
           class="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           @click="isEditing = true"
@@ -117,8 +118,8 @@ const forwardLike = (id: string) => emit('like', id)
           <Edit2 class="h-3.5 w-3.5" />
           <span>Edit</span>
         </button>
-        
-        <button 
+
+        <button
           v-if="isAuthor"
           class="flex items-center gap-1.5 text-muted-foreground hover:text-destructive transition-colors"
           @click="emit('delete', comment.id)"
@@ -127,9 +128,10 @@ const forwardLike = (id: string) => emit('like', id)
           <span>Delete</span>
         </button>
       </div>
-      
+
+      <!-- Reply form -->
       <div v-if="isReplying" class="mt-4 border-l-2 border-primary/20 pl-4 py-2">
-        <CommentForm 
+        <CommentForm
           placeholder="Write a reply..."
           submit-label="Reply"
           :is-submitting="isSubmitting"
@@ -137,11 +139,11 @@ const forwardLike = (id: string) => emit('like', id)
           @cancel="isReplying = false"
         />
       </div>
-      
-      <!-- Recursive Replies Rendering -->
-      <div v-if="replies && replies.length > 0" class="space-y-2">
-        <CommentCard 
-          v-for="reply in replies" 
+
+      <!-- Recursive Replies -->
+      <div v-if="replies && replies.length > 0" class="mt-4 space-y-2 pl-4 border-l border-border/40">
+        <CommentCard
+          v-for="reply in replies"
           :key="reply.id"
           :comment="reply"
           :replies="reply.replies"

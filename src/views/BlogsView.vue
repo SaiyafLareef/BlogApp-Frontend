@@ -1,62 +1,75 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { blogApi } from '@/api/blogs'
 import type { Post } from '@/types'
 import BlogGrid from '@/components/blog/BlogGrid.vue'
 import BlogFilters from '@/components/blog/BlogFilters.vue'
 import BlogPagination from '@/components/blog/BlogPagination.vue'
 
-import { MOCK_POSTS } from '@/utils/mockData'
-
 const route = useRoute()
+const router = useRouter()
 const categories = ['Vue.js', 'CSS', 'TypeScript', 'UI/UX', 'Design', 'Testing']
 
-const searchQuery = ref('')
-const selectedCategory = ref(route.query.category as string || 'All')
-const currentSort = ref('newest')
-const currentPage = ref(1)
+const posts = ref<Post[]>([])
+const loading = ref(true)
+const totalPosts = ref(0)
 const itemsPerPage = 6
 
-// Filter and Sort Logic
-const filteredAndSortedPosts = computed(() => {
-  let result = [...MOCK_POSTS]
+const searchQuery = ref(route.query.search as string || '')
+const selectedCategory = ref(route.query.category as string || 'All')
+const currentSort = ref(route.query.sort as string || 'newest')
+const currentPage = ref(Number(route.query.page) || 1)
 
-  // Filter by category
-  if (selectedCategory.value !== 'All') {
-    result = result.filter(post => post.category === selectedCategory.value)
-  }
-
-  // Filter by search
-  if (searchQuery.value.trim() !== '') {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(
-      post => post.title.toLowerCase().includes(query) || post.excerpt.toLowerCase().includes(query)
-    )
-  }
-
-  // Sort
-  result.sort((a, b) => {
-    if (currentSort.value === 'newest') {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    } else if (currentSort.value === 'oldest') {
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    } else if (currentSort.value === 'popular') {
-      return b.views - a.views
+const fetchPosts = async () => {
+  loading.value = true
+  try {
+    const params: any = {
+      page: currentPage.value,
+      limit: itemsPerPage,
     }
-    return 0
-  })
+    if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
+    if (selectedCategory.value !== 'All') params.category = selectedCategory.value.toLowerCase()
+    if (currentSort.value !== 'newest') params.sort = currentSort.value
 
-  return result
+    const res = await blogApi.getPosts(params)
+    posts.value = res.posts
+    totalPosts.value = res.total
+  } catch (error) {
+    console.error('Failed to load posts', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const updateQueryParams = () => {
+  const query: any = {}
+  if (searchQuery.value) query.search = searchQuery.value
+  if (selectedCategory.value !== 'All') query.category = selectedCategory.value
+  if (currentSort.value !== 'newest') query.sort = currentSort.value
+  if (currentPage.value > 1) query.page = currentPage.value
+  
+  router.replace({ query }).catch(() => {})
+}
+
+// When our local state changes, update the URL
+watch([searchQuery, selectedCategory, currentSort, currentPage], () => {
+  updateQueryParams()
 })
 
-// Pagination Logic
-const paginatedPosts = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredAndSortedPosts.value.slice(start, end)
+// When the URL changes (e.g. from navbar search), sync state and fetch
+watch(() => route.query, (newQuery) => {
+  if (newQuery.search !== undefined) searchQuery.value = newQuery.search as string
+  if (newQuery.category !== undefined) selectedCategory.value = newQuery.category as string
+  if (newQuery.sort !== undefined) currentSort.value = newQuery.sort as string
+  if (newQuery.page !== undefined) currentPage.value = Number(newQuery.page)
+  fetchPosts()
+}, { deep: true })
+
+onMounted(() => {
+  fetchPosts()
 })
 
-// Reset page to 1 when filters change
 const handleSearchUpdate = (val: string) => {
   searchQuery.value = val
   currentPage.value = 1
@@ -97,10 +110,10 @@ const handlePageUpdate = (val: number) => {
       @update:sort="handleSortUpdate"
     />
 
-    <BlogGrid :posts="paginatedPosts" />
+    <BlogGrid :posts="posts" />
 
     <BlogPagination 
-      :total="filteredAndSortedPosts.length"
+      :total="totalPosts"
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
       @update:page="handlePageUpdate"

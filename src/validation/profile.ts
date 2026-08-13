@@ -4,7 +4,7 @@ export const profileUpdateSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Must be a valid email address'),
   bio: z.string().max(200, 'Bio is too long').optional(),
-  avatarUrl: z.string().url('Must be a valid URL').optional().or(z.literal(''))
+  avatar: z.string().url('Must be a valid URL').optional().or(z.literal(''))
 })
 
 export const passwordUpdateSchema = z.object({

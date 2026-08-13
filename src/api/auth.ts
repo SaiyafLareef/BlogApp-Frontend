@@ -1,37 +1,54 @@
-import { mockUsers } from '@/utils/mockData'
-import type { User } from '@/types'
+import { apiClient, apiUpload } from './index';
+import type { User } from '@/types';
 
-const DELAY = 800
+interface AuthPayload {
+  user: User;
+  token: string;
+}
+
+interface RegisterPayload {
+  message: string;
+  user: User;
+}
 
 export const authApi = {
-  login: async (email: string, password?: string): Promise<User> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const user = Object.values(mockUsers).find(u => u.email === email)
-        if (user) resolve(user)
-        else resolve(mockUsers.alice) // Default fallback for mock
-      }, DELAY)
-    })
-  },
+  /**
+   * POST /auth/login
+   * Returns { message, user, token }
+   */
+  login: (email: string, password: string): Promise<AuthPayload> =>
+    apiClient.post('/auth/login', { email, password }),
 
-  register: async (userData: Partial<User>): Promise<User> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newUser: User = {
-          id: `user-${Date.now()}`,
-          name: userData.name || 'New User',
-          email: userData.email || '',
-          avatarUrl: userData.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'New')}`,
-          bio: userData.bio || ''
-        }
-        resolve(newUser)
-      }, DELAY)
-    })
-  },
+  /**
+   * POST /auth/register
+   * Returns { message, user }
+   */
+  register: (data: {
+    username: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    name?: string;
+  }): Promise<RegisterPayload> =>
+    apiClient.post('/auth/register', data),
 
-  logout: async (): Promise<void> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(), 300)
-    })
-  }
-}
+  /**
+   * POST /auth/logout
+   */
+  logout: (): Promise<void> =>
+    apiClient.post('/auth/logout'),
+
+  /**
+   * GET /auth/me  (requires bearer token)
+   * Returns { user }
+   */
+  getMe: (): Promise<{ user: User }> =>
+    apiClient.get('/auth/me'),
+
+  /**
+   * PATCH /auth/password (requires auth)
+   * Returns { message }
+   */
+  updatePassword: (data: { currentPassword: string; newPassword: string }): Promise<{ message: string }> =>
+    apiClient.patch('/auth/password', data),
+};

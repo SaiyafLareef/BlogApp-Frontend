@@ -2,7 +2,8 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useBlog } from '@/composables/useBlog'
-import { blogsApi } from '@/api/blogs'
+import { blogApi } from '@/api/blogs'
+import { userApi } from '@/api/users'
 import type { Post } from '@/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -19,28 +20,33 @@ const savedPosts = ref<Post[]>([])
 
 const isLoading = ref(true)
 
-// Mock joined date since it's not on the User type
-const joinedDate = 'October 2023'
+const joinedDate = computed(() => {
+  if (!user.value?.createdAt) return 'Recently'
+  const date = new Date(user.value.createdAt)
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+})
 
 onMounted(async () => {
   isLoading.value = true
   try {
     if (!user.value) return
     
-    if (allPosts.value.length === 0) {
-      await fetchAllPosts()
-    }
-    
     // Fetch authored posts
-    recentPosts.value = await blogsApi.getPostsByUser(user.value.id)
+    const postsRes = await blogApi.getPosts({ authorId: user.value.id })
+    recentPosts.value = postsRes.posts
     
-    // Simulate liked and saved posts
-    const otherPosts = allPosts.value.filter(p => p.author.id !== user.value!.id)
-    likedPosts.value = otherPosts.slice(0, 2)
-    savedPosts.value = otherPosts.slice(1, 3)
+    // Fetch liked posts
+    const likedRes = await userApi.getLikedPosts()
+    likedPosts.value = likedRes.posts || []
+
+    // Fetch saved posts
+    const savedRes = await userApi.getBookmarkedPosts()
+    // backend getBookmarks returns { bookmarks: { id, userId, postId, createdAt, post: BlogPost }[] }
+    // let's extract the posts if they exist
+    savedPosts.value = savedRes.bookmarks?.map((b: any) => b.post) || []
     
   } catch (error) {
-    console.error('Failed to load profile data')
+    console.error('Failed to load profile data', error)
   } finally {
     isLoading.value = false
   }
@@ -73,7 +79,7 @@ const totalLikesReceived = computed(() => {
         <!-- Avatar -->
         <div class="flex-shrink-0">
           <Avatar class="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-xl bg-background">
-            <AvatarImage :src="user?.avatarUrl || user?.avatar" :alt="user?.name" />
+            <AvatarImage :src="(user?.avatar as string) || ''" :alt="user?.name ?? ''" />
           <AvatarFallback class="text-4xl">{{ user?.name?.charAt(0).toUpperCase() }}</AvatarFallback>
         </Avatar>
         </div>
