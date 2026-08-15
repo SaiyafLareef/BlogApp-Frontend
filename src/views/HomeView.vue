@@ -35,7 +35,7 @@ onMounted(async () => {
       </Badge>
 
       <h1 class="text-5xl font-extrabold tracking-tight lg:text-7xl mb-6 max-w-4xl">
-        Welcome to the <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">Modern Blog</span>
+        Welcome to the <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">TechChronicle</span>
       </h1>
 
       <p class="text-xl text-muted-foreground max-w-[700px] mb-10 leading-relaxed">

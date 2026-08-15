@@ -45,7 +45,7 @@ const handleLogout = async () => {
         <!-- Logo -->
         <RouterLink to="/" class="flex items-center gap-2 font-bold text-xl tracking-tight text-primary transition-colors hover:text-primary/80">
           <BookOpen class="h-6 w-6" />
-          <span class="hidden sm:inline-block">Modern Blog</span>
+          <span class="hidden sm:inline-block">TechChronicle</span>
         </RouterLink>
       </div>
       

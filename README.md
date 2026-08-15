@@ -1,6 +1,6 @@
-# Blog Frontend
+# TechChronicle Frontend
 
-The frontend interface for the Blog Application, built with Vue 3 and Vite.
+The frontend interface for TechChronicle, a platform focused on in-depth technical deep dives and engineering blogs. Built with Vue 3 and Vite.
 
 ## Tech Stack
 - **Framework**: Vue 3 (Composition API)

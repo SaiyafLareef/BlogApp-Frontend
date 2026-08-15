@@ -12,7 +12,7 @@ import { BookOpen } from '@lucide/vue'
         <div class="col-span-1 md:col-span-2">
           <RouterLink to="/" class="flex items-center gap-2 font-bold text-xl tracking-tight text-primary transition-colors hover:text-primary/80 mb-4">
             <BookOpen class="h-6 w-6" />
-            Modern Blog
+            TechChronicle
           </RouterLink>
           <p class="text-muted-foreground text-sm max-w-sm">
             Discover amazing stories, insights, and technical articles built with an outstanding user experience.
@@ -56,7 +56,7 @@ import { BookOpen } from '@lucide/vue'
       
       <div class="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <p class="text-sm text-muted-foreground">
-          &copy; {{ new Date().getFullYear() }} Modern Blog. All rights reserved.
+          &copy; {{ new Date().getFullYear() }} TechChronicle. All rights reserved.
         </p>
         <p class="text-sm text-muted-foreground flex items-center gap-1">
           Built with <span class="text-primary font-medium">Vue 3</span> & <span class="text-primary font-medium">shadcn-vue</span>

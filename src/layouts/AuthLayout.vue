@@ -8,16 +8,20 @@ import { BookOpen } from '@lucide/vue'
     <div class="w-full max-w-md mb-8 flex justify-center">
       <RouterLink to="/" class="flex items-center gap-2 font-bold text-2xl tracking-tight text-primary transition-colors hover:text-primary/80">
         <BookOpen class="h-8 w-8" />
-        Modern Blog
+        TechChronicle
       </RouterLink>
     </div>
     
-    <main class="w-full max-w-md">
-      <RouterView />
-    </main>
+    <!-- Auth Content -->
+    <div class="flex-grow flex items-center justify-center p-4">
+      <div class="w-full max-w-md">
+        <RouterView />
+      </div>
+    </div>
     
-    <footer class="mt-12 text-center text-sm text-muted-foreground">
-      <p>&copy; {{ new Date().getFullYear() }} Modern Blog. All rights reserved.</p>
-    </footer>
+    <!-- Footer -->
+    <div class="p-6 text-center text-sm text-muted-foreground">
+      <p>&copy; {{ new Date().getFullYear() }} TechChronicle. All rights reserved.</p>
+    </div>
   </div>
 </template>

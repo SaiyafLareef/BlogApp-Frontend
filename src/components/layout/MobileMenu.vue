@@ -38,7 +38,7 @@ const handleLogout = async () => {
       <SheetHeader>
         <SheetTitle class="flex items-center gap-2">
           <BookOpen class="h-5 w-5 text-primary" />
-          Modern Blog
+          TechChronicle
         </SheetTitle>
       </SheetHeader>
       
